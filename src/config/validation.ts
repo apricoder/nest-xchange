@@ -6,8 +6,10 @@ export const ValidationSchema = Joi.object({
   REDIS_PORT: Joi.number().required(),
   REDIS_PASSWORD: Joi.string().required(),
 
-  // Cache settings
-  EXCHANGE_RATES_TTL_SEC: Joi.number().required()
+  // Exchange rates
+  EXCHANGE_RATES_REFRESH_CRON: Joi.string().required(),
+  EXCHANGE_RATES_TRIGGER_REFRESH_KEY: Joi.string().required(),
+  EXCHANGE_RATES_SRC_URL: Joi.string().uri().required(),
 });
 
 export const ValidationOptions = {
