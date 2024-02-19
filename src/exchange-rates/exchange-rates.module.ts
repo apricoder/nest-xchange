@@ -5,9 +5,10 @@ import { HttpModule } from '@nestjs/axios';
 import { CronJob } from 'cron';
 import { ExchangeRatesService } from './exchange-rates.service';
 import { ExchangeRatesController } from './exchange-rates.controller';
+import { RedisCacheModule } from '../redis-cache/redis-cache.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, RedisCacheModule],
   providers: [ExchangeRatesService],
   controllers: [ExchangeRatesController],
 })

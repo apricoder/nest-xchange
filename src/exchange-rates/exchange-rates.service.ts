@@ -1,11 +1,14 @@
+import { firstValueFrom } from 'rxjs';
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { MonobankExchangeRates } from './types/monobank-exchange-rates.type';
 
 @Injectable()
@@ -15,6 +18,7 @@ export class ExchangeRatesService {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async refreshExchangeRates(
