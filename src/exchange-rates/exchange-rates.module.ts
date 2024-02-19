@@ -1,10 +1,10 @@
 import { Logger, Module, OnModuleInit } from '@nestjs/common';
-import { ExchangeRatesService } from './exchange-rates.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
 import { ConfigService } from '@nestjs/config';
-import { ExchangeRatesController } from './exchange-rates.controller';
 import { HttpModule } from '@nestjs/axios';
+import { CronJob } from 'cron';
+import { ExchangeRatesService } from './exchange-rates.service';
+import { ExchangeRatesController } from './exchange-rates.controller';
 
 @Module({
   imports: [HttpModule],
