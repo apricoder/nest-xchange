@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { redisStore } from 'cache-manager-redis-yet';
       inject: [ConfigService],
     }),
     ScheduleModule.forRoot(),
+    ExchangeRatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
