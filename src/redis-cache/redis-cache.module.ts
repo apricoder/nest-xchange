@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule, CacheModuleOptions } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 
-const redisCacheModule = CacheModule.register({
+const redisCacheModule = CacheModule.registerAsync({
   imports: [ConfigModule],
   useFactory: async (
     configService: ConfigService,
