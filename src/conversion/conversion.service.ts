@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { ExchangeRatesService } from 'src/exchange-rates/exchange-rates.service';
+import * as _ from 'lodash';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { CurrencyCode } from '../currency/types/currency-code.type';
 import { ExchangeRate } from '../exchange-rates/types/exchange-rate.type';
 
@@ -75,7 +76,27 @@ export class ConversionService {
     tgtCurrency: CurrencyCode,
     exchangeRate: ExchangeRate,
   ): number {
-    // todo implement
-    return -1;
+    const currenciesMatchExchangeRate = _.isEqual(
+      [srcCurrency, tgtCurrency].sort(),
+      [exchangeRate.currencyCodeA, exchangeRate.currencyCodeB].sort(),
+    );
+    if (!currenciesMatchExchangeRate) {
+      throw new InternalServerErrorException(
+        `exchangeRate doesn't match srcCurrency and tgtCurrency`,
+      );
+    }
+
+    const shouldBuy = srcCurrency === exchangeRate.currencyCodeA;
+    const useRateCross = exchangeRate.rateCross;
+
+    const tgtAmount = useRateCross
+      ? shouldBuy
+        ? srcAmount * exchangeRate.rateCross
+        : srcAmount / exchangeRate.rateCross
+      : shouldBuy
+        ? srcAmount * exchangeRate.rateBuy
+        : srcAmount / exchangeRate.rateSell;
+
+    return _.round(tgtAmount, 2);
   }
 }
