@@ -64,8 +64,8 @@ export class ExchangeRatesService {
     }
   }
 
-  async getCachedExchangeRate(sourceCurrencyCode: CurrencyCode, targetCurrencyCode: CurrencyCode): Promise<ExchangeRate> {
-    const key = this.getCacheKey(sourceCurrencyCode, targetCurrencyCode);
+  async getCachedExchangeRate(srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode): Promise<ExchangeRate> {
+    const key = this.getCacheKey(srcCurrency, tgtCurrency);
     return this.cacheManager.get<ExchangeRate>(key);
   }
 
