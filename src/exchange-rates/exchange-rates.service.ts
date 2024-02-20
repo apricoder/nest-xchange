@@ -13,7 +13,7 @@ import { Cache } from 'cache-manager';
 import { MonobankExchangeRate } from './types/monobank-exchange-rate.type';
 import { isoCodeToCurrencyCode } from './types/currency-code.type';
 import { ExchangeRate, ExchangeRatesMap } from './types/exchange-rate.type';
-import { wait } from '../utils/time';
+import { wait } from '../common/utils/time';
 
 @Injectable()
 export class ExchangeRatesService {
