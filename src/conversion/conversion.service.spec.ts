@@ -70,6 +70,61 @@ describe('ConversionService', () => {
           expect(tgtAmount).toEqual(921.66); // srcAmount / rateSell
         });
       });
+
+      describe('when no direct rate, but src:uah and uah:tgt rates present', () => {
+        const rateEurUah: ExchangeRate = {
+          currencyCodeA: 'EUR',
+          currencyCodeB: 'UAH',
+          externalDateUnix: 1708466473,
+          rateBuy: 41.25,
+          rateSell: 41.9903,
+          fetchedAtUnix: 1708470000,
+        };
+        const rateUsdUah: ExchangeRate = {
+          currencyCodeA: 'USD',
+          currencyCodeB: 'UAH',
+          externalDateUnix: 1708434073,
+          rateBuy: 38.3,
+          rateSell: 38.7507,
+          fetchedAtUnix: 1708462800,
+        };
+
+        beforeEach(() => {
+          ratesService.getCachedExchangeRate = jest
+            .fn()
+            .mockImplementation((srcCurr: CurrencyCode, tgtCurr: CurrencyCode) => {
+              if (_.isEqual([srcCurr, tgtCurr].sort(), ['EUR', 'UAH'].sort())) {
+                return rateEurUah;
+              }
+              if (_.isEqual([srcCurr, tgtCurr].sort(), ['USD', 'UAH'].sort())) {
+                return rateUsdUah;
+              }
+            });
+        });
+
+        it('should call ratesService.getCachedExchangeRate with correct params', async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.getCachedExchangeRate).toHaveBeenCalledTimes(3);
+
+          // first should try to get direct rate
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(1, 'EUR', 'USD');
+
+          // then 2 more calls to get indirect rates with uah
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(2, 'EUR', 'UAH');
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(3, 'USD', 'UAH');
+        });
+
+        it('should return correct target amount when converting EUR -> USD', async () => {
+          const tgtAmount = await service.convert('EUR', 'USD', 1000);
+          expect(tgtAmount).toEqual(1064.5); // 1000 eur -> 41250 uah -> 1064.5 usd
+        });
+
+        it('should return correct target amount when converting USD -> EUR', async () => {
+          const tgtAmount = await service.convert('USD', 'EUR', 1000);
+          expect(tgtAmount).toEqual(912.12); // 1000 usd -> 38300 uah -> 912.12 usd
+        });
+      });
     });
   });
 
