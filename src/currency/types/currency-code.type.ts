@@ -98,6 +98,7 @@ export const currencyCodeToIsoCode = {
   TRY: 949,
   TWD: 901,
   TZS: 834,
+  UAH: 980,
   UGX: 800,
   USD: 840,
   UYU: 858,
