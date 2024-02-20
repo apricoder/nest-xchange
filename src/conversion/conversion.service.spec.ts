@@ -1,11 +1,14 @@
+import * as _ from 'lodash';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConversionService } from './conversion.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { ExchangeRate } from '../exchange-rates/types/exchange-rate.type';
 import { InternalServerErrorException } from '@nestjs/common';
+import { CurrencyCode } from '../currency/types/currency-code.type';
 
 describe('ConversionService', () => {
   let service: ConversionService;
+  let ratesService: ExchangeRatesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,10 +24,53 @@ describe('ConversionService', () => {
     }).compile();
 
     service = module.get<ConversionService>(ConversionService);
+    ratesService = module.get<ExchangeRatesService>(ExchangeRatesService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('convert', () => {
+    describe('when cache has relevant exchange rates', () => {
+      describe('when cache has direct exchange rate', () => {
+        const rateEurUsd: ExchangeRate = {
+          currencyCodeA: 'EUR',
+          currencyCodeB: 'USD',
+          externalDateUnix: 1708434073,
+          rateBuy: 1.073,
+          rateSell: 1.085,
+          fetchedAtUnix: 1708466400,
+        };
+
+        beforeEach(() => {
+          ratesService.getCachedExchangeRate = jest
+            .fn()
+            .mockImplementation((srcCurr: CurrencyCode, tgtCurr: CurrencyCode) => {
+              if (_.isEqual([srcCurr, tgtCurr].sort(), ['EUR', 'USD'].sort())) {
+                return rateEurUsd;
+              }
+            });
+        });
+
+        it('should call ratesService.getCachedExchangeRate with correct params', async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.getCachedExchangeRate).toHaveBeenCalledTimes(1);
+          expect(ratesService.getCachedExchangeRate).toHaveBeenCalledWith('EUR', 'USD');
+        });
+
+        it('should return correct target amount when converting EUR -> USD', async () => {
+          const tgtAmount = await service.convert('EUR', 'USD', 1000);
+          expect(tgtAmount).toEqual(1073); // srcAmount * rateBuy
+        });
+
+        it('should return correct target amount when converting USD -> EUR', async () => {
+          const tgtAmount = await service.convert('USD', 'EUR', 1000);
+          expect(tgtAmount).toEqual(921.66); // srcAmount / rateSell
+        });
+      });
+    });
   });
 
   describe('calculateTargetAmount', () => {
