@@ -30,12 +30,8 @@ export class ExchangeRatesModule implements OnModuleInit {
 
   private setupCronToRefreshExchangeRates() {
     const cron = this.configService.get<string>('exchangeRates.refreshCron');
-    this.logger.log(
-      `[~] Setting up refresh exchange rates job. Cron - "${cron}"`,
-    );
-    const job = new CronJob(cron, () =>
-      this.ratesService.refreshExchangeRatesCache(),
-    );
+    this.logger.log(`[~] Setting up refresh exchange rates job. Cron - "${cron}"`);
+    const job = new CronJob(cron, () => this.ratesService.refreshExchangeRatesCache());
     this.schedulerRegistry.addCronJob('refresh-exchange-rates', job);
     job.start();
   }

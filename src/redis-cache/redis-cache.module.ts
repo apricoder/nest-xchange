@@ -5,9 +5,7 @@ import { redisStore } from 'cache-manager-redis-yet';
 
 const redisCacheModule = CacheModule.registerAsync({
   imports: [ConfigModule],
-  useFactory: async (
-    configService: ConfigService,
-  ): Promise<CacheModuleOptions> => {
+  useFactory: async (configService: ConfigService): Promise<CacheModuleOptions> => {
     const host = configService.get<string>('redis.host');
     const port = configService.get<number>('redis.port');
     const password = configService.get<string>('redis.password');

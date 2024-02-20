@@ -1,20 +1,10 @@
-import {
-  registerDecorator,
-  ValidationArguments,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from 'class-validator';
+import { registerDecorator, ValidationArguments, ValidatorConstraint, ValidatorConstraintInterface } from 'class-validator';
 import { ValidationOptions } from 'joi';
-import {
-  CurrencyCode,
-  currencyCodeToIsoCode,
-} from '../types/currency-code.type';
+import { CurrencyCode, currencyCodeToIsoCode } from '../types/currency-code.type';
 
 @ValidatorConstraint({ async: false })
-export class IsCurrencyCodeValidConstraint
-  implements ValidatorConstraintInterface
-{
-  validate(currencyCode: CurrencyCode, args: ValidationArguments) {
+export class IsCurrencyCodeValidConstraint implements ValidatorConstraintInterface {
+  validate(currencyCode: CurrencyCode) {
     return currencyCodeToIsoCode.hasOwnProperty(currencyCode);
   }
 
@@ -25,7 +15,7 @@ export class IsCurrencyCodeValidConstraint
 }
 
 export function IsCurrencyCodeValid(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       target: object.constructor,
       propertyName: propertyName,

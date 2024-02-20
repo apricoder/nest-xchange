@@ -13,10 +13,6 @@ export class ConversionController {
   ) {
     const { sourceCurrencyCode, targetCurrencyCode, amount } = body;
 
-    return this.conversionService.convert(
-      sourceCurrencyCode,
-      targetCurrencyCode,
-      amount,
-    );
+    return this.conversionService.convert(sourceCurrencyCode, targetCurrencyCode, amount);
   }
 }

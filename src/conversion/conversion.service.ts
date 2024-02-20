@@ -25,7 +25,11 @@ export class ConversionService {
     // else give up
   }
 
-  private async convertUsingCachedRateOrNull(srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode, amount: number): Promise<number | null> {
+  private async convertUsingCachedRateOrNull(
+    srcCurrency: CurrencyCode,
+    tgtCurrency: CurrencyCode,
+    amount: number,
+  ): Promise<number | null> {
     try {
       // check if direct exchange rate cached
       const directRate = await this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency);
@@ -70,9 +74,7 @@ export class ConversionService {
       [exchangeRate.currencyCodeA, exchangeRate.currencyCodeB].sort(),
     );
     if (!currenciesMatchExchangeRate) {
-      throw new InternalServerErrorException(
-        `exchangeRate doesn't match srcCurrency and tgtCurrency`,
-      );
+      throw new InternalServerErrorException(`exchangeRate doesn't match srcCurrency and tgtCurrency`);
     }
 
     const shouldBuy = srcCurrency === exchangeRate.currencyCodeA;

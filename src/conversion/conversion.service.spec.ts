@@ -41,24 +41,12 @@ describe('ConversionService', () => {
       };
 
       it(`should divide by 'rateSell' when converting UAH -> USD`, () => {
-        const targetAmount = service.calculateTargetAmount(
-          srcAmount,
-          'UAH',
-          'USD',
-          rateUahUsd,
-        );
-
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'UAH', 'USD', rateUahUsd);
         expect(targetAmount).toEqual(25.81); // srcAmount / rateSell
       });
 
       it(`should multiply by 'rateBuy' when converting USD -> UAH`, () => {
-        const targetAmount = service.calculateTargetAmount(
-          srcAmount,
-          'USD',
-          'UAH',
-          rateUahUsd,
-        );
-
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'USD', 'UAH', rateUahUsd);
         expect(targetAmount).toEqual(38300); // srcAmount * rateBuy
       });
     });
@@ -75,24 +63,12 @@ describe('ConversionService', () => {
       };
 
       it(`should divide by 'rateSell' when converting UAH -> PLN`, () => {
-        const targetAmount = service.calculateTargetAmount(
-          srcAmount,
-          'UAH',
-          'PLN',
-          ratePlnUah,
-        );
-
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'UAH', 'PLN', ratePlnUah);
         expect(targetAmount).toEqual(103.45); // srcAmount / rateSell
       });
 
       it(`should multiply by 'rateBuy' when converting PLN -> UAH`, () => {
-        const targetAmount = service.calculateTargetAmount(
-          srcAmount,
-          'PLN',
-          'UAH',
-          ratePlnUah,
-        );
-
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'PLN', 'UAH', ratePlnUah);
         expect(targetAmount).toEqual(9666.4); // srcAmount * rateBuy
       });
     });
@@ -110,12 +86,8 @@ describe('ConversionService', () => {
       };
 
       it('should throw an exception', () => {
-        expect(() =>
-          service.calculateTargetAmount(srcAmount, 'UAH', 'PLN', rateUahUsd),
-        ).toThrow(
-          new InternalServerErrorException(
-            `exchangeRate doesn't match srcCurrency and tgtCurrency`,
-          ),
+        expect(() => service.calculateTargetAmount(srcAmount, 'UAH', 'PLN', rateUahUsd)).toThrow(
+          new InternalServerErrorException(`exchangeRate doesn't match srcCurrency and tgtCurrency`),
         );
       });
     });

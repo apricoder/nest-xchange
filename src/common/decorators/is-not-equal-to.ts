@@ -1,11 +1,8 @@
 import { registerDecorator, ValidationArguments } from 'class-validator';
 import { ValidationOptions } from 'joi';
 
-export function IsNotEqualTo(
-  property: string,
-  validationOptions?: ValidationOptions,
-) {
-  return function (object: Object, propertyName: string) {
+export function IsNotEqualTo(property: string, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isNotEqualTo',
       target: object.constructor,
