@@ -25,7 +25,7 @@ export class ExchangeRatesModule implements OnModuleInit {
     this.setupCronToRefreshExchangeRates();
 
     // initial refresh on startup
-    await this.ratesService.refreshExchangeRates();
+    await this.ratesService.refreshExchangeRatesCache();
   }
 
   private setupCronToRefreshExchangeRates() {
@@ -34,7 +34,7 @@ export class ExchangeRatesModule implements OnModuleInit {
       `[~] Setting up refresh exchange rates job. Cron - "${cron}"`,
     );
     const job = new CronJob(cron, () =>
-      this.ratesService.refreshExchangeRates(),
+      this.ratesService.refreshExchangeRatesCache(),
     );
     this.schedulerRegistry.addCronJob('refresh-exchange-rates', job);
     job.start();

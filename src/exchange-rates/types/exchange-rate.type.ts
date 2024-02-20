@@ -4,7 +4,7 @@ export type ExchangeRate = {
   currencyCodeA: CurrencyCode;
   currencyCodeB: CurrencyCode;
   externalDateUnix: number;
-  cachedAtUnix: number;
+  fetchedAtUnix: number;
 } & (
   | {
       // sometimes it has buy/sell rates
@@ -19,3 +19,8 @@ export type ExchangeRate = {
       rateSell?: undefined;
     }
 );
+
+export type ExchangeRatesMap = {
+  // example key: "USD-UAH"
+  [key: string]: ExchangeRate;
+};

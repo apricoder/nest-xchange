@@ -14,6 +14,6 @@ export class ExchangeRatesController {
     if (key !== this.configService.get('exchangeRates.triggerRefreshKey')) {
       throw new NotFoundException();
     }
-    await this.ratesService.refreshExchangeRates({ silentLog: false });
+    await this.ratesService.refreshExchangeRatesCache({ silentLog: false });
   }
 }
