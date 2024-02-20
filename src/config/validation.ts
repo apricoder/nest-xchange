@@ -10,6 +10,7 @@ export const ValidationSchema = Joi.object({
   EXCHANGE_RATES_REFRESH_CRON: Joi.string().required(),
   EXCHANGE_RATES_TRIGGER_REFRESH_KEY: Joi.string().required(),
   EXCHANGE_RATES_SRC_URL: Joi.string().uri().required(),
+  EXCHANGE_RATES_CACHE_TTL_SEC: Joi.number().required(),
 });
 
 export const ValidationOptions = {

@@ -10,5 +10,6 @@ export default () => ({
     refreshCron: process.env.EXCHANGE_RATES_REFRESH_CRON,
     triggerRefreshKey: process.env.EXCHANGE_RATES_TRIGGER_REFRESH_KEY,
     srcUrl: process.env.EXCHANGE_RATES_SRC_URL,
+    cacheTTLSec: process.env.EXCHANGE_RATES_CACHE_TTL_SEC,
   },
 });

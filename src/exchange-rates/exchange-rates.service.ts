@@ -23,8 +23,6 @@ export class ExchangeRatesService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private exchangeRateCacheTTL = 0; // never expire (to have a fallback if refresh cron fails)
-
   async refreshExchangeRates(
     params: { silentLog: boolean } = { silentLog: true },
   ) {
@@ -61,11 +59,10 @@ export class ExchangeRatesService {
 
             // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
             const cacheKey = [currencyCodeA, currencyCodeB].sort().join(`-`);
-            await this.cacheManager.set(
-              cacheKey,
-              mapped,
-              this.exchangeRateCacheTTL,
+            const cacheTTLSec = this.configService.get(
+              'exchangeRates.cacheTTLSec',
             );
+            await this.cacheManager.set(cacheKey, mapped, cacheTTLSec * 1000);
 
             cachingSuccessCount += 1;
           } catch (e) {
