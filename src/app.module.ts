@@ -7,6 +7,7 @@ import { ValidationOptions, ValidationSchema } from './config/validation';
 import configuration from './config/configuration';
 import { ExchangeRatesModule } from './exchange-rates/exchange-rates.module';
 import { RedisCacheModule } from './redis-cache/redis-cache.module';
+import { ConversionModule } from './conversion/conversion.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { RedisCacheModule } from './redis-cache/redis-cache.module';
     ScheduleModule.forRoot(),
     RedisCacheModule,
     ExchangeRatesModule,
+    ConversionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
