@@ -11,7 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { MonobankExchangeRate } from './types/monobank-exchange-rate.type';
-import { isoCodeToCurrencyCode } from './types/currency-code.type';
+import { isoCodeToCurrencyCode } from '../currency/types/currency-code.type';
 import { ExchangeRate, ExchangeRatesMap } from './types/exchange-rate.type';
 import { wait } from '../common/utils/time';
 
