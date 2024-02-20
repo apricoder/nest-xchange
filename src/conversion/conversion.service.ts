@@ -31,7 +31,6 @@ export class ConversionService {
     amount: number,
   ): Promise<number | null> {
     try {
-      // check if direct exchange rate cached
       const directRate = await this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency);
       if (directRate) {
         return this.calculateTargetAmount(amount, srcCurrency, tgtCurrency, directRate);
@@ -40,7 +39,7 @@ export class ConversionService {
       // if no direct rate & neither source nor target is uah
       const noneIsUah = srcCurrency !== 'UAH' && tgtCurrency !== 'UAH';
       if (noneIsUah) {
-        // try to convert source -> uah -> target
+        // get rates for indirect conversion like source -> uah -> target
         const [srcUahRate, tgtUahRate] = await Promise.all([
           this.ratesService.getCachedExchangeRate(srcCurrency, 'UAH'),
           this.ratesService.getCachedExchangeRate(tgtCurrency, 'UAH'),
@@ -50,9 +49,8 @@ export class ConversionService {
           return null;
         }
 
-        // convert source -> uah
+        // 2-step conversion: source -> uah, uah -> target
         const uahAmount = this.calculateTargetAmount(amount, srcCurrency, 'UAH', srcUahRate);
-        // convert uah -> target
         const tgtAmount = this.calculateTargetAmount(uahAmount, 'UAH', tgtCurrency, tgtUahRate);
 
         return tgtAmount;
