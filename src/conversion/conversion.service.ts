@@ -1,33 +1,36 @@
 import * as _ from 'lodash';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
 import { CurrencyCode } from '../currency/types/currency-code.type';
 import { ExchangeRate } from '../exchange-rates/types/exchange-rate.type';
 
 @Injectable()
 export class ConversionService {
+  private readonly logger = new Logger(ConversionService.name);
+
   constructor(private readonly ratesService: ExchangeRatesService) {}
 
-  async convert(
-    srcCurrency: CurrencyCode,
-    tgtCurrency: CurrencyCode,
-    amount: number,
-  ) {
+  async convert(srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode, amount: number) {
     // first try to convert based on cached rate
+    const tgtAmountUsingCachedRate = await this.convertUsingCachedRateOrNull(srcCurrency, tgtCurrency, amount);
+
+    if (tgtAmountUsingCachedRate) {
+      return tgtAmountUsingCachedRate;
+    }
+
+    // if couldn't convert with cached rate
+    // fetch fresh rates map from monobank
+    // if direct rate - calculate & return target amount
+    // else try to convert source -> uah -> target
+    // else give up
+  }
+
+  private async convertUsingCachedRateOrNull(srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode, amount: number): Promise<number | null> {
     try {
       // check if direct exchange rate cached
-      const directRate = await this.ratesService.getCachedExchangeRate(
-        srcCurrency,
-        tgtCurrency,
-      );
-
+      const directRate = await this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency);
       if (directRate) {
-        return this.calculateTargetAmount(
-          amount,
-          srcCurrency,
-          tgtCurrency,
-          directRate,
-        );
+        return this.calculateTargetAmount(amount, srcCurrency, tgtCurrency, directRate);
       }
 
       // if no direct rate & neither source nor target is uah
@@ -40,34 +43,20 @@ export class ConversionService {
         ]);
 
         if (!srcUahRate || !tgtUahRate) {
-          // if some rate is missing give up
+          return null;
         }
 
         // convert source -> uah
-        const uahAmount = this.calculateTargetAmount(
-          amount,
-          srcCurrency,
-          'UAH',
-          srcUahRate,
-        );
-
+        const uahAmount = this.calculateTargetAmount(amount, srcCurrency, 'UAH', srcUahRate);
         // convert uah -> target
-        return this.calculateTargetAmount(
-          uahAmount,
-          'UAH',
-          tgtCurrency,
-          tgtUahRate,
-        );
+        const tgtAmount = this.calculateTargetAmount(uahAmount, 'UAH', tgtCurrency, tgtUahRate);
+
+        return tgtAmount;
       }
     } catch (e) {
-      // silent log & go to monobank request
+      this.logger.error(`Error converting using cached rate: ${e}`);
+      return null;
     }
-
-    // if couldn't convert with cached rate
-    // fetch fresh rates map from monobank
-    // if direct rate - calculate & return target amount
-    // else try to convert source -> uah -> target
-    // else give up
   }
 
   public calculateTargetAmount(
