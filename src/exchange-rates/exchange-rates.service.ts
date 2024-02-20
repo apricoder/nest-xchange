@@ -13,6 +13,7 @@ import { Cache } from 'cache-manager';
 import { MonobankExchangeRate } from './types/monobank-exchange-rate.type';
 import { isoCodeToCurrencyCode } from './types/currency-code.type';
 import { ExchangeRate, ExchangeRatesMap } from './types/exchange-rate.type';
+import { wait } from '../utils/time';
 
 @Injectable()
 export class ExchangeRatesService {
@@ -25,32 +26,6 @@ export class ExchangeRatesService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {
     this.cacheTTL = this.configService.get('exchangeRates.cacheTTLSec') * 1000;
-  }
-
-  async fetchLatestExchangeRatesMap(): Promise<ExchangeRatesMap> {
-    try {
-      const exchangeRatesSrcUrl = this.configService.get(
-        'exchangeRates.srcUrl',
-      );
-
-      // todo add exponential retries
-      const { data: rates } = await firstValueFrom(
-        this.httpService.get<MonobankExchangeRate[]>(exchangeRatesSrcUrl),
-      );
-
-      const fetchedAtUnix = Math.floor(Date.now() / 1000);
-      return rates
-        .map((rate) => this.mapExchangeRate(rate, fetchedAtUnix))
-        .reduce((acc, next) => {
-          // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
-          const key = [next.currencyCodeA, next.currencyCodeB].sort().join(`-`);
-          return { ...acc, [key]: next };
-        }, {});
-    } catch (e) {
-      throw new InternalServerErrorException(
-        `Error getting latest exchange rates map: ${e}`,
-      );
-    }
   }
 
   async refreshExchangeRatesCache(
@@ -84,6 +59,54 @@ export class ExchangeRatesService {
       }
       throw new InternalServerErrorException(message);
     }
+  }
+
+  async fetchLatestExchangeRatesMap(): Promise<ExchangeRatesMap> {
+    try {
+      const rates = await this.fetchLatestMonobankExchangeRates();
+
+      const fetchedAtUnix = Math.floor(Date.now() / 1000);
+      return rates
+        .map((rate) => this.mapExchangeRate(rate, fetchedAtUnix))
+        .reduce((acc, next) => {
+          // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
+          const key = [next.currencyCodeA, next.currencyCodeB].sort().join(`-`);
+          return { ...acc, [key]: next };
+        }, {});
+    } catch (e) {
+      throw new InternalServerErrorException(
+        `Error getting latest exchange rates map: ${e}`,
+      );
+    }
+  }
+
+  private async fetchLatestMonobankExchangeRates(
+    maxRetries = 5,
+  ): Promise<MonobankExchangeRate[]> {
+    const attempt = async (attempts: number) => {
+      try {
+        const ratesSrcUrl = this.configService.get('exchangeRates.srcUrl');
+        const { data: rates } = await firstValueFrom(
+          this.httpService.get<MonobankExchangeRate[]>(ratesSrcUrl),
+        );
+
+        return rates;
+      } catch (e) {
+        this.logger.error(`Failed attempt to fetch exchange rates: ${e}`);
+        if (attempts >= maxRetries) {
+          throw e;
+        }
+
+        // Calculate exponential backoff delay: 2^attempts * 100 milliseconds
+        const delayMs = 2 ** attempts * 100;
+        this.logger.error(`Next attempt in ${delayMs}ms`);
+        await wait(delayMs);
+
+        return attempt(attempts + 1);
+      }
+    };
+
+    return attempt(1);
   }
 
   private mapExchangeRate(
