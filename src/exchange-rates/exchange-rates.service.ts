@@ -16,12 +16,15 @@ import { ExchangeRate } from './types/exchange-rate.type';
 @Injectable()
 export class ExchangeRatesService {
   private readonly logger = new Logger(ExchangeRatesService.name);
+  private readonly cacheTTL: number;
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
-  ) {}
+  ) {
+    this.cacheTTL = this.configService.get('exchangeRates.cacheTTLSec') * 1000;
+  }
 
   async refreshExchangeRates(
     params: { silentLog: boolean } = { silentLog: true },
@@ -59,10 +62,7 @@ export class ExchangeRatesService {
 
             // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
             const cacheKey = [currencyCodeA, currencyCodeB].sort().join(`-`);
-            const cacheTTLSec = this.configService.get(
-              'exchangeRates.cacheTTLSec',
-            );
-            await this.cacheManager.set(cacheKey, mapped, cacheTTLSec * 1000);
+            await this.cacheManager.set(cacheKey, mapped, this.cacheTTL);
 
             cachingSuccessCount += 1;
           } catch (e) {
