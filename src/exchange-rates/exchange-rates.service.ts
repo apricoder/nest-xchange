@@ -11,7 +11,10 @@ import { ConfigService } from '@nestjs/config';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { MonobankExchangeRate } from './types/monobank-exchange-rate.type';
-import { isoCodeToCurrencyCode } from '../currency/types/currency-code.type';
+import {
+  CurrencyCode,
+  isoCodeToCurrencyCode,
+} from '../currency/types/currency-code.type';
 import { ExchangeRate, ExchangeRatesMap } from './types/exchange-rate.type';
 import { wait } from '../common/utils/time';
 
@@ -69,8 +72,7 @@ export class ExchangeRatesService {
       return rates
         .map((rate) => this.mapExchangeRate(rate, fetchedAtUnix))
         .reduce((acc, next) => {
-          // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
-          const key = [next.currencyCodeA, next.currencyCodeB].sort().join(`-`);
+          const key = this.getCacheKey(next.currencyCodeA, next.currencyCodeB);
           return { ...acc, [key]: next };
         }, {});
     } catch (e) {
@@ -78,6 +80,14 @@ export class ExchangeRatesService {
         `Error getting latest exchange rates map: ${e}`,
       );
     }
+  }
+
+  async getCachedExchangeRate(
+    sourceCurrencyCode: CurrencyCode,
+    targetCurrencyCode: CurrencyCode,
+  ): Promise<ExchangeRate> {
+    const key = this.getCacheKey(sourceCurrencyCode, targetCurrencyCode);
+    return this.cacheManager.get<ExchangeRate>(key);
   }
 
   private async fetchLatestMonobankExchangeRates(
@@ -124,5 +134,13 @@ export class ExchangeRatesService {
       rateCross: rate.rateCross,
       fetchedAtUnix,
     } as ExchangeRate;
+  }
+
+  private getCacheKey(
+    currencyCodeA: CurrencyCode,
+    currencyCodeB: CurrencyCode,
+  ) {
+    // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
+    return [currencyCodeA, currencyCodeB].sort().join(`-`);
   }
 }
