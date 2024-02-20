@@ -77,7 +77,7 @@ describe('ConversionService', () => {
     describe(`when exchange rate has 'rateBuy' & 'rateSell'`, () => {
       const srcAmount = 1000;
 
-      const rateUahUsd: ExchangeRate = {
+      const rateUsdUah: ExchangeRate = {
         currencyCodeA: 'USD',
         currencyCodeB: 'UAH',
         externalDateUnix: 1708434073,
@@ -87,12 +87,12 @@ describe('ConversionService', () => {
       };
 
       it(`should divide by 'rateSell' when converting UAH -> USD`, () => {
-        const targetAmount = service.calculateTargetAmount(srcAmount, 'UAH', 'USD', rateUahUsd);
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'UAH', 'USD', rateUsdUah);
         expect(targetAmount).toEqual(25.81); // srcAmount / rateSell
       });
 
       it(`should multiply by 'rateBuy' when converting USD -> UAH`, () => {
-        const targetAmount = service.calculateTargetAmount(srcAmount, 'USD', 'UAH', rateUahUsd);
+        const targetAmount = service.calculateTargetAmount(srcAmount, 'USD', 'UAH', rateUsdUah);
         expect(targetAmount).toEqual(38300); // srcAmount * rateBuy
       });
     });
