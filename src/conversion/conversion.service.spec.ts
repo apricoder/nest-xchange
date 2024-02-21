@@ -211,6 +211,63 @@ describe('ConversionService', () => {
           expect(ratesService.refreshExchangeRatesCache).toHaveBeenCalledWith({ exchangeRatesMap, silentLog: true });
         });
       });
+
+      describe('double conversion without cache', () => {
+        let exchangeRatesMap: ExchangeRatesMap;
+
+        beforeEach(() => {
+          // no exchange rate in cache
+          ratesService.getCachedExchangeRate = jest.fn().mockResolvedValue(null);
+
+          // mock downloaded fresh exchange rates map
+          exchangeRatesMap = {
+            [ratesService.getCurrencyPairKey('EUR', 'UAH')]: rateEurUah,
+            [ratesService.getCurrencyPairKey('USD', 'UAH')]: rateUsdUah,
+          };
+          ratesService.fetchLatestExchangeRatesMap = jest.fn().mockResolvedValue(exchangeRatesMap);
+        });
+
+        it('should call ratesService.getCachedExchangeRate to try to get cached rates', async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.getCachedExchangeRate).toHaveBeenCalledTimes(3);
+
+          // first should try to get direct rate
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(1, 'EUR', 'USD');
+
+          // then 2 more calls to try to get indirect rates with uah
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(2, 'EUR', 'UAH');
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(3, 'USD', 'UAH');
+        });
+
+        it(`should call ratesService.fetchLatestExchangeRatesMap after cache didn't return rates`, async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.fetchLatestExchangeRatesMap).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return correct target amount when converting EUR -> UAH -> USD', async () => {
+          const conversionResult = await service.convert('EUR', 'USD', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 1064.5, // 1000 eur -> 41250 uah -> 1064.5 usd
+            conversion: 'double',
+          });
+        });
+
+        it('should return correct target amount when converting USD -> UAH -> EUR', async () => {
+          const tgtAmount = await service.convert('USD', 'EUR', 1000);
+          expect(tgtAmount).toEqual({
+            tgtAmount: 912.12, // 1000 usd -> 38300 uah -> 912.12 usd
+            conversion: 'double',
+          });
+        });
+
+        it('should use freshly downloaded exchange rates map to refresh cache', async () => {
+          await service.convert('USD', 'EUR', 1000);
+          expect(ratesService.refreshExchangeRatesCache).toHaveBeenCalledTimes(1);
+          expect(ratesService.refreshExchangeRatesCache).toHaveBeenCalledWith({ exchangeRatesMap, silentLog: true });
+        });
+      })
     });
   });
 
