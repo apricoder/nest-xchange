@@ -2,6 +2,23 @@ version: '3.8'
 name: nest-xchange
 
 services:
+  nest:
+    image: apricoder/nest-xchange:0.0.1
+    container_name: nest-app
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      EXCHANGE_RATES_REFRESH_CRON: ${EXCHANGE_RATES_REFRESH_CRON}
+      EXCHANGE_RATES_TRIGGER_REFRESH_KEY: ${EXCHANGE_RATES_TRIGGER_REFRESH_KEY}
+      EXCHANGE_RATES_CACHE_TTL_SEC: ${EXCHANGE_RATES_CACHE_TTL_SEC}
+      EXCHANGE_RATES_SRC_URL: ${EXCHANGE_RATES_SRC_URL}
+    ports:
+      - '${APP_PORT}:3000'
+    depends_on:
+      - redis
+
   redis:
     image: redis:7.2.4
     container_name: redis

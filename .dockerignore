@@ -1,0 +1,21 @@
+# infrastructure
+docker
+
+# local docker files
+Dockerfile
+.dockerignore
+
+# npm dependencies
+node_modules
+npm-debug.log
+
+# generated dirs
+dist
+coverage
+
+# git
+.git
+
+# ide
+.idea
+.vscode
