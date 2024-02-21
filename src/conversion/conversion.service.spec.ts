@@ -315,14 +315,14 @@ describe('ConversionService', () => {
         fetchedAtUnix: 1708466400,
       };
 
-      it(`should divide by 'rateSell' when converting UAH -> PLN`, () => {
+      it(`should divide by 'rateCross' when converting UAH -> PLN`, () => {
         const targetAmount = service.calculateTargetAmount(srcAmount, 'UAH', 'PLN', ratePlnUah);
-        expect(targetAmount).toEqual(103.45); // srcAmount / rateSell
+        expect(targetAmount).toEqual(103.45); // srcAmount / rateCross
       });
 
-      it(`should multiply by 'rateBuy' when converting PLN -> UAH`, () => {
+      it(`should multiply by 'rateCross' when converting PLN -> UAH`, () => {
         const targetAmount = service.calculateTargetAmount(srcAmount, 'PLN', 'UAH', ratePlnUah);
-        expect(targetAmount).toEqual(9666.4); // srcAmount * rateBuy
+        expect(targetAmount).toEqual(9666.4); // srcAmount * rateCross
       });
     });
 
