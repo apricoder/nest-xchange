@@ -1,6 +1,6 @@
 import { IsNotEmpty, IsNumber, IsString, Min } from 'class-validator';
-import { CurrencyCode } from 'src/currency/types/currency-code.type';
-import { IsCurrencyCodeValid } from 'src/currency/decorators/is-currency-code-valid';
+import { CurrencyCode } from '../../currency/types/currency-code.type';
+import { IsCurrencyCodeValid } from '../../currency/decorators/is-currency-code-valid';
 import { IsNotEqualTo } from '../../common/decorators/is-not-equal-to';
 
 export class ConvertCurrencyRequestDto {

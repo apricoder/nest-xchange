@@ -1,4 +1,4 @@
-import { CurrencyCode } from 'src/currency/types/currency-code.type';
+import { CurrencyCode } from '../../currency/types/currency-code.type';
 
 export type ExchangeRate = {
   currencyCodeA: CurrencyCode;

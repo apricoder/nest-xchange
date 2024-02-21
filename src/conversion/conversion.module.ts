@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ExchangeRatesModule } from 'src/exchange-rates/exchange-rates.module';
+import { ExchangeRatesModule } from '../exchange-rates/exchange-rates.module';
 import { ConversionController } from './conversion.controller';
 import { ConversionService } from './conversion.service';
 
