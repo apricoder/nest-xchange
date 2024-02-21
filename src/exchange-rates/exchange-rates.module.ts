@@ -11,6 +11,7 @@ import { RedisCacheModule } from '../redis-cache/redis-cache.module';
   imports: [HttpModule, RedisCacheModule],
   providers: [ExchangeRatesService],
   controllers: [ExchangeRatesController],
+  exports: [ExchangeRatesService]
 })
 export class ExchangeRatesModule implements OnModuleInit {
   private readonly logger = new Logger(ExchangeRatesModule.name);
