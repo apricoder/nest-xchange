@@ -54,7 +54,9 @@ export class ConversionService {
     amount: number,
   ): Promise<number | null> {
     try {
-      return this.convertUsingRateProvider(srcCurrency, tgtCurrency, amount, this.ratesService.getCachedExchangeRate);
+      return this.convertUsingRateProvider(srcCurrency, tgtCurrency, amount, (srcCurrency, tgtCurrency) =>
+        this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency),
+      );
     } catch (e) {
       this.logger.error(`Error converting using cached rate: ${e}`);
       return null;
