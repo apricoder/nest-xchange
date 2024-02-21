@@ -1,5 +1,5 @@
 ## Nest Xchange
-A NestJS currency converter application using Redis cache for currency exchanges. 
+A NestJS currency converter application using Redis cache for exchange rates. 
 It features:
 - fetching currency exchange rate from public Monobank API
 - scheduled and on-request exchange rate cache renewal 
@@ -50,9 +50,9 @@ The accepted body format example:
 }
 ```
 
-The complete list of the supported currency codes is in `currency-code.type.ts`
+The complete list of the supported currency codes is in [currency-code.type.ts](src/currency/types/currency-code.type.ts)
 
-The logic of conversion is implemented in the `conversion.service.ts` and specked out in a `conversion.service.spec.ts` 
+The logic of conversion is implemented in the [conversion.service.ts](src/conversion/conversion.service.ts) and specked out in a [conversion.service.spec.ts](src/conversion/conversion.service.spec.ts) 
 
 ### Direct conversion example
 
@@ -138,7 +138,7 @@ Cache TTL is 15 min by default
 
 ## Test
 
-The app has critical logic covered by unit tests. The most important is `conversion.service.spec.ts` 
+The app has critical logic covered by unit tests. The most important is [conversion.service.spec.ts](src/conversion/conversion.service.spec.ts)
 
 ```bash
 # unit tests
