@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConversionService } from './conversion.service';
 import { ExchangeRatesService } from '../exchange-rates/exchange-rates.service';
-import { ExchangeRate } from '../exchange-rates/types/exchange-rate.type';
+import { ExchangeRate, ExchangeRatesMap } from '../exchange-rates/types/exchange-rate.type';
 import { InternalServerErrorException } from '@nestjs/common';
 import { CurrencyCode } from '../currency/types/currency-code.type';
 
@@ -18,6 +18,9 @@ describe('ConversionService', () => {
           provide: ExchangeRatesService,
           useValue: {
             getCachedExchangeRate: jest.fn(),
+            fetchLatestExchangeRatesMap: jest.fn(),
+            refreshExchangeRatesCache: jest.fn(),
+            getCurrencyPairKey: jest.fn().mockImplementation((a, b) => [a, b].sort().join(`-`)),
           },
         },
       ],
@@ -32,17 +35,35 @@ describe('ConversionService', () => {
   });
 
   describe('convert', () => {
-    describe('when cache has relevant exchange rates', () => {
-      describe('when cache has direct exchange rate', () => {
-        const rateEurUsd: ExchangeRate = {
-          currencyCodeA: 'EUR',
-          currencyCodeB: 'USD',
-          externalDateUnix: 1708434073,
-          rateBuy: 1.073,
-          rateSell: 1.085,
-          fetchedAtUnix: 1708466400,
-        };
+    const rateEurUsd: ExchangeRate = {
+      currencyCodeA: 'EUR',
+      currencyCodeB: 'USD',
+      externalDateUnix: 1708434073,
+      rateBuy: 1.073,
+      rateSell: 1.085,
+      fetchedAtUnix: 1708466400,
+    };
 
+    const rateEurUah: ExchangeRate = {
+      currencyCodeA: 'EUR',
+      currencyCodeB: 'UAH',
+      externalDateUnix: 1708466473,
+      rateBuy: 41.25,
+      rateSell: 41.9903,
+      fetchedAtUnix: 1708470000,
+    };
+
+    const rateUsdUah: ExchangeRate = {
+      currencyCodeA: 'USD',
+      currencyCodeB: 'UAH',
+      externalDateUnix: 1708434073,
+      rateBuy: 38.3,
+      rateSell: 38.7507,
+      fetchedAtUnix: 1708462800,
+    };
+
+    describe('when exchange rate is available in cache', () => {
+      describe('direct conversion with cache', () => {
         beforeEach(() => {
           ratesService.getCachedExchangeRate = jest
             .fn()
@@ -60,35 +81,30 @@ describe('ConversionService', () => {
           expect(ratesService.getCachedExchangeRate).toHaveBeenCalledWith('EUR', 'USD');
         });
 
+        it(`should not call ratesService.fetchLatestExchangeRatesMap`, async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.fetchLatestExchangeRatesMap).not.toHaveBeenCalled();
+        });
+
         it('should return correct target amount when converting EUR -> USD', async () => {
-          const tgtAmount = await service.convert('EUR', 'USD', 1000);
-          expect(tgtAmount).toEqual(1073); // srcAmount * rateBuy
+          const conversionResult = await service.convert('EUR', 'USD', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 1073, // srcAmount * rateBuy
+            conversion: 'direct',
+          });
         });
 
         it('should return correct target amount when converting USD -> EUR', async () => {
-          const tgtAmount = await service.convert('USD', 'EUR', 1000);
-          expect(tgtAmount).toEqual(921.66); // srcAmount / rateSell
+          const conversionResult = await service.convert('USD', 'EUR', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 921.66, // srcAmount / rateSell
+            conversion: 'direct',
+          });
         });
       });
 
-      describe('when no direct rate, but src:uah and uah:tgt rates present', () => {
-        const rateEurUah: ExchangeRate = {
-          currencyCodeA: 'EUR',
-          currencyCodeB: 'UAH',
-          externalDateUnix: 1708466473,
-          rateBuy: 41.25,
-          rateSell: 41.9903,
-          fetchedAtUnix: 1708470000,
-        };
-        const rateUsdUah: ExchangeRate = {
-          currencyCodeA: 'USD',
-          currencyCodeB: 'UAH',
-          externalDateUnix: 1708434073,
-          rateBuy: 38.3,
-          rateSell: 38.7507,
-          fetchedAtUnix: 1708462800,
-        };
-
+      describe('double conversion with cache', () => {
         beforeEach(() => {
           ratesService.getCachedExchangeRate = jest
             .fn()
@@ -115,14 +131,84 @@ describe('ConversionService', () => {
           expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(3, 'USD', 'UAH');
         });
 
+        it(`should not call ratesService.fetchLatestExchangeRatesMap`, async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.fetchLatestExchangeRatesMap).not.toHaveBeenCalled();
+        });
+
+        it('should return correct target amount when converting EUR -> UAH -> USD', async () => {
+          const conversionResult = await service.convert('EUR', 'USD', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 1064.5, // 1000 eur -> 41250 uah -> 1064.5 usd
+            conversion: 'double',
+          });
+        });
+
+        it('should return correct target amount when converting USD -> UAH -> EUR', async () => {
+          const tgtAmount = await service.convert('USD', 'EUR', 1000);
+          expect(tgtAmount).toEqual({
+            tgtAmount: 912.12, // 1000 usd -> 38300 uah -> 912.12 usd
+            conversion: 'double',
+          });
+        });
+      });
+    });
+
+    describe('when exchange rate is not cached', () => {
+      describe('direct conversion without cache', () => {
+        let exchangeRatesMap: ExchangeRatesMap;
+
+        beforeEach(() => {
+          // no exchange rate in cache
+          ratesService.getCachedExchangeRate = jest.fn().mockResolvedValue(null);
+
+          // mock downloaded fresh exchange rates map
+          exchangeRatesMap = {
+            [ratesService.getCurrencyPairKey('EUR', 'USD')]: rateEurUsd,
+          };
+          ratesService.fetchLatestExchangeRatesMap = jest.fn().mockResolvedValue(exchangeRatesMap);
+        });
+
+        it('should call ratesService.getCachedExchangeRate to try to get cached rates', async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.getCachedExchangeRate).toHaveBeenCalledTimes(3);
+
+          // first should try to get direct rate
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(1, 'EUR', 'USD');
+
+          // then 2 more calls to try to get indirect rates with uah
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(2, 'EUR', 'UAH');
+          expect(ratesService.getCachedExchangeRate).toHaveBeenNthCalledWith(3, 'USD', 'UAH');
+        });
+
+        it(`should call ratesService.fetchLatestExchangeRatesMap after cache didn't return rates`, async () => {
+          await service.convert('EUR', 'USD', 1000);
+
+          expect(ratesService.fetchLatestExchangeRatesMap).toHaveBeenCalledTimes(1);
+        });
+
         it('should return correct target amount when converting EUR -> USD', async () => {
-          const tgtAmount = await service.convert('EUR', 'USD', 1000);
-          expect(tgtAmount).toEqual(1064.5); // 1000 eur -> 41250 uah -> 1064.5 usd
+          const conversionResult = await service.convert('EUR', 'USD', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 1073, // srcAmount * rateBuy
+            conversion: 'direct',
+          });
         });
 
         it('should return correct target amount when converting USD -> EUR', async () => {
-          const tgtAmount = await service.convert('USD', 'EUR', 1000);
-          expect(tgtAmount).toEqual(912.12); // 1000 usd -> 38300 uah -> 912.12 usd
+          const conversionResult = await service.convert('USD', 'EUR', 1000);
+          expect(conversionResult).toEqual({
+            tgtAmount: 921.66, // srcAmount / rateSell
+            conversion: 'direct',
+          });
+        });
+
+        it('should use freshly downloaded exchange rates map to refresh cache', async () => {
+          await service.convert('USD', 'EUR', 1000);
+          expect(ratesService.refreshExchangeRatesCache).toHaveBeenCalledTimes(1);
+          expect(ratesService.refreshExchangeRatesCache).toHaveBeenCalledWith({ exchangeRatesMap, silentLog: true });
         });
       });
     });
