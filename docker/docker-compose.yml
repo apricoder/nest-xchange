@@ -39,3 +39,5 @@ services:
       HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD}
     ports:
       - "${REDIS_COMMANDER_PORT}:8081"
+    depends_on:
+      - redis
