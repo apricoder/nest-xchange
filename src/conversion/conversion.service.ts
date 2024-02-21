@@ -33,15 +33,13 @@ export class ConversionService {
   ): Promise<{ exchangeRatesMap: ExchangeRatesMap; tgtAmount: number }> {
     try {
       const exchangeRatesMap = await this.ratesService.fetchLatestExchangeRatesMap();
-      const tgtAmount = await this.convertUsingRateProvider(
-        srcCurrency,
-        tgtCurrency,
-        amount,
-        async (srcCurrency, tgtCurrency) => {
+      const tgtAmount = await this.convertUsingRateProvider(srcCurrency, tgtCurrency, amount, {
+        name: 'Fresh download',
+        provideRate: async (srcCurrency, tgtCurrency) => {
           const key = this.ratesService.getCurrencyPairKey(srcCurrency, tgtCurrency);
           return exchangeRatesMap[key];
         },
-      );
+      });
       return { exchangeRatesMap, tgtAmount };
     } catch (e) {
       throw new InternalServerErrorException(`Error converting using freshly fetched rates: ${e}`);
@@ -54,9 +52,10 @@ export class ConversionService {
     amount: number,
   ): Promise<number | null> {
     try {
-      return this.convertUsingRateProvider(srcCurrency, tgtCurrency, amount, (srcCurrency, tgtCurrency) =>
-        this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency),
-      );
+      return this.convertUsingRateProvider(srcCurrency, tgtCurrency, amount, {
+        name: 'Redis',
+        provideRate: (srcCurrency, tgtCurrency) => this.ratesService.getCachedExchangeRate(srcCurrency, tgtCurrency),
+      });
     } catch (e) {
       this.logger.error(`Error converting using cached rate: ${e}`);
       return null;
@@ -68,10 +67,16 @@ export class ConversionService {
     tgtCurrency: CurrencyCode,
     amount: number,
     // Either redis cache or latest downloaded exchange rates
-    provideRate: (srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode) => Promise<ExchangeRate>,
+    rateProvider: {
+      name: string;
+      provideRate: (srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode) => Promise<ExchangeRate>;
+    },
   ): Promise<number | null> {
-    const directRate = await provideRate(srcCurrency, tgtCurrency);
+    const directRate = await rateProvider.provideRate(srcCurrency, tgtCurrency);
     if (directRate) {
+      this.logger.log(
+        `[~] Conversion: direct, Currencies: ${srcCurrency} → ${tgtCurrency}, Rate source: ${rateProvider.name}`,
+      );
       return this.calculateTargetAmount(amount, srcCurrency, tgtCurrency, directRate);
     }
 
@@ -79,11 +84,18 @@ export class ConversionService {
     const noneIsUah = srcCurrency !== 'UAH' && tgtCurrency !== 'UAH';
     if (noneIsUah) {
       // get rates for indirect conversion like source -> uah -> target
-      const [srcUahRate, tgtUahRate] = await Promise.all([provideRate(srcCurrency, 'UAH'), provideRate(tgtCurrency, 'UAH')]);
+      const [srcUahRate, tgtUahRate] = await Promise.all([
+        rateProvider.provideRate(srcCurrency, 'UAH'),
+        rateProvider.provideRate(tgtCurrency, 'UAH'),
+      ]);
 
       if (!srcUahRate || !tgtUahRate) {
         return null;
       }
+
+      this.logger.log(
+        `[~] Conversion: 2-step, Currencies: ${srcCurrency} → ${tgtCurrency}, Rate source: ${rateProvider.name}`,
+      );
 
       // 2-step conversion: source -> uah, uah -> target
       const uahAmount = this.calculateTargetAmount(amount, srcCurrency, 'UAH', srcUahRate);
