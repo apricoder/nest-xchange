@@ -1,3 +1,5 @@
+![Branches](./badges/badge-branches.svg) ![Functions](./badges/badge-functions.svg) ![Lines](./badges/badge-lines.svg) ![Lines](./badges/badge-statements.svg)
+
 ## Nest Xchange
 A NestJS currency converter application using Redis cache for exchange rates. 
 It features:
