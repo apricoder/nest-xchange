@@ -56,7 +56,7 @@ export class ExchangeRatesService {
       return rates
         .map((rate) => this.mapExchangeRate(rate, fetchedAtUnix))
         .reduce((acc, next) => {
-          const key = this.getCacheKey(next.currencyCodeA, next.currencyCodeB);
+          const key = this.getCurrencyPairKey(next.currencyCodeA, next.currencyCodeB);
           return { ...acc, [key]: next };
         }, {});
     } catch (e) {
@@ -65,7 +65,7 @@ export class ExchangeRatesService {
   }
 
   async getCachedExchangeRate(srcCurrency: CurrencyCode, tgtCurrency: CurrencyCode): Promise<ExchangeRate> {
-    const key = this.getCacheKey(srcCurrency, tgtCurrency);
+    const key = this.getCurrencyPairKey(srcCurrency, tgtCurrency);
     return this.cacheManager.get<ExchangeRate>(key);
   }
 
@@ -108,7 +108,7 @@ export class ExchangeRatesService {
     } as ExchangeRate;
   }
 
-  private getCacheKey(currencyCodeA: CurrencyCode, currencyCodeB: CurrencyCode) {
+  public getCurrencyPairKey(currencyCodeA: CurrencyCode, currencyCodeB: CurrencyCode) {
     // key is always sorted alphabetically to be able to get rate in 1 call independently of a/b or b/a conversion
     return [currencyCodeA, currencyCodeB].sort().join(`-`);
   }
