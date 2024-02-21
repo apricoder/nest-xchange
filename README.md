@@ -28,6 +28,7 @@ You should now have 3 containers running:
 
 To watch the app logs:
 ```bash
+$ cd docker
 $ docker compose logs --follow nest
 ```
 
@@ -107,6 +108,7 @@ Example response:
 ## Local development
 To run the nest app locally, first stop the nest app in the container from the quick start:
 ```bash
+$ cd docker
 $ docker compose up -d --scale nest=0
 ```
 
