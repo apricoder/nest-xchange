@@ -39,6 +39,10 @@ describe('ConversionController', () => {
       };
     });
 
+    it('should be defined', () => {
+      expect(controller.convert).toBeDefined();
+    });
+
     it('should call conversionService.convert with correct params', async () => {
       await controller.convert(body);
 

@@ -62,6 +62,10 @@ describe('ConversionService', () => {
       fetchedAtUnix: 1708462800,
     };
 
+    it('should be defined', () => {
+      expect(service.convert).toBeDefined();
+    });
+
     describe('when exchange rate is available in cache', () => {
       describe('direct conversion with cache', () => {
         beforeEach(() => {
@@ -272,6 +276,11 @@ describe('ConversionService', () => {
   });
 
   describe('calculateTargetAmount', () => {
+
+    it('should be defined', () => {
+      expect(service.calculateTargetAmount).toBeDefined();
+    });
+
     describe(`when exchange rate has 'rateBuy' & 'rateSell'`, () => {
       const srcAmount = 1000;
 
